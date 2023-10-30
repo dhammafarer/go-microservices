@@ -1,0 +1,12 @@
+{
+    "Servers": {
+        "1": {
+            "Name": "microservices",
+            "Group": "Servers",
+            "Port": 5432,
+            "Username": "postgres",
+            "Host": "localhost",
+            "MaintenanceDB": "postgres"
+        }
+    }
+}
