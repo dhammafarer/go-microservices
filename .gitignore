@@ -3,4 +3,6 @@ tags
 **/frontApp
 **/brokerApp
 **/authApp
+**/loggerApp
+**/mailerApp
 project/db-data

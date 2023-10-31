@@ -11,10 +11,14 @@ PGADMIN_PORT=5050
 
 MONGO_IMAGE="docker.io/library/mongo:4.2.16-bionic"
 
+MAILHOG_IMAGE="docker.io/mailhog/mailhog:latest"
+
 podman pod create --replace --name $POD_NAME \
-    -p 8081-8083:8081-8083 \
+    -p 8081-8084:8081-8084 \
     -p 5050:5050 \
     -p 27017:27017 \
+    -p 1025:1025 \
+    -p 8025:8025 \
     -p 5432:5432
 
 podman create --name ${POD_NAME}-broker-service \
@@ -34,13 +38,9 @@ podman create --name ${POD_NAME}-authentication-service \
     dbname=users sslmode=disable timezone=UTC connect_timeout=5" \
     microservices/authentication-service
 
-podman create --name ${POD_NAME}-pgadmin \
-    -e "PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}" \
-    -e "PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}" \
-    -e "PGADMIN_LISTEN_PORT=${PGADMIN_PORT}" \
-    -v ./db-data/servers.json:/pgadmin4/servers.json:Z \
+podman create --name ${POD_NAME}-mailhog \
     --pod $POD_NAME \
-    $PGADMIN_IMAGE
+    $MAILHOG_IMAGE
 
 podman create --name ${POD_NAME}-postgres \
     --pod $POD_NAME \
