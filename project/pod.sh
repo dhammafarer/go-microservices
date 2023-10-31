@@ -22,6 +22,11 @@ podman create --name ${POD_NAME}-broker-service \
     --restart always \
     microservices/broker-service
 
+podman create --name ${POD_NAME}-logger-service \
+    --pod $POD_NAME \
+    --restart always \
+    microservices/logger-service
+
 podman create --name ${POD_NAME}-authentication-service \
     --pod $POD_NAME \
     --restart always \
