@@ -29,7 +29,7 @@ func (app *Config) Broker(w http.ResponseWriter, r *http.Request) {
 func (app *Config) HandleSubmission(w http.ResponseWriter, r *http.Request) {
     var payload RequestPayload
 
-    err := app.readJson(w, r, &payload)
+    err := app.readJSON(w, r, &payload)
     if err != nil {
         app.errorJSON(w, err)
         return
@@ -49,7 +49,7 @@ func (app *Config) authenticate(w http.ResponseWriter, a AuthPayload) {
 
     // call the service
     request, err := http.NewRequest(
-        "POST", "http://localhost:8280/authenticate", bytes.NewBuffer(jsonData),
+        "POST", "http://localhost:8082/authenticate", bytes.NewBuffer(jsonData),
     )
     if err != nil {
         app.errorJSON(w, err)

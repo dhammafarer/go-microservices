@@ -9,10 +9,12 @@ PGADMIN_EMAIL=pgadmin@example.com
 PGADMIN_PASSWORD=K4HeAk1xzNg4OZ9zAZVKSSwXs
 PGADMIN_PORT=5050
 
+MONGO_IMAGE="docker.io/library/mongo:4.2.16-bionic"
+
 podman pod create --replace --name $POD_NAME \
-    -p 8080:8080 \
-    -p 8280:8280 \
+    -p 8081-8083:8081-8083 \
     -p 5050:5050 \
+    -p 27017:27017 \
     -p 5432:5432
 
 podman create --name ${POD_NAME}-broker-service \
@@ -42,5 +44,14 @@ podman create --name ${POD_NAME}-postgres \
     -e POSTGRES_PASSWORD="password" \
     -e POSTGRES_DB="users" \
     -v ./db-data/postgres/:/var/lib/postgresql/data/:Z \
-    -v ./db-data/initdb/:/docker-entrypoint-initdb.d/:Z \
+    -v ./initdb/:/docker-entrypoint-initdb.d/:Z \
     $PGSQL_IMAGE
+
+podman create --name ${POD_NAME}-mongo \
+    --pod $POD_NAME \
+    --restart always \
+    -e MONGO_INITDB_DATABASE="logs" \
+    -e MONGO_INITDB_ROOT_USERNAME="admin" \
+    -e MONGO_INITDB_ROOT_PASSWORD="password" \
+    -v ./db-data/mongo/:/data/db:Z \
+    $MONGO_IMAGE
