@@ -2,6 +2,7 @@ FRONT_END_BINARY=frontApp
 BROKER_BINARY=brokerApp
 AUTH_BINARY=authApp
 LOGGER_BINARY=loggerApp
+MAILER_BINARY=mailerApp
 
 POD_NAME=microservices
 
@@ -13,7 +14,7 @@ up:
 	@echo "Pod started!"
 
 ## up_build: stops pod (if running), builds all projects and starts pod again
-up_build: build_broker build_auth build_logger
+up_build: build_broker build_auth build_logger build_mailer
 	@echo "Stopping pod (if running...)"
 	podman pod stop -i ${POD_NAME}
 	@echo "Removing pod"
@@ -22,6 +23,7 @@ up_build: build_broker build_auth build_logger
 	cd ../broker-service && podman build . -t microservices/broker-service
 	cd ../authentication-service && podman build . -t microservices/authentication-service
 	cd ../logger-service && podman build . -t microservices/logger-service
+	cd ../mail-service && podman build . -t microservices/mailer-service
 	@echo "Starting pod..."
 	sh ./pod.sh
 	podman pod start ${POD_NAME}
@@ -38,6 +40,12 @@ down:
 build_broker:
 	@echo "Building broker binary..."
 	cd ../broker-service && env GOOS=linux CGO_ENABLED=0 go build -o ${BROKER_BINARY} ./cmd/api
+	@echo "Done!"
+
+## build_mailer: builds the mailer binary as a linux executable
+build_mailer:
+	@echo "Building mailer binary..."
+	cd ../mail-service && env GOOS=linux CGO_ENABLED=0 go build -o ${MAILER_BINARY} ./cmd/api
 	@echo "Done!"
 
 ## build_auth: builds the auth binary as a linux executable

@@ -31,6 +31,19 @@ podman create --name ${POD_NAME}-logger-service \
     --restart always \
     microservices/logger-service
 
+podman create --name ${POD_NAME}-mailer-service \
+    --pod $POD_NAME \
+    --restart always \
+    -e MAIL_DOMAIN="localhost" \
+    -e MAIL_PORT="1025" \
+    -e MAIL_HOST="localhost" \
+    -e MAIL_USERNAME="" \
+    -e MAIL_PASSWORD="" \
+    -e MAIL_ENCRYPTION="none" \
+    -e MAIL_FROM_NAME="John Doe" \
+    -e MAIL_FROM_ADDRESS="john.doe@example.com" \
+    microservices/mailer-service
+
 podman create --name ${POD_NAME}-authentication-service \
     --pod $POD_NAME \
     --restart always \
