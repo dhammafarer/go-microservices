@@ -13,12 +13,15 @@ MONGO_IMAGE="docker.io/library/mongo:4.2.16-bionic"
 
 MAILHOG_IMAGE="docker.io/mailhog/mailhog:latest"
 
+RABBITMQ_IMAGE="docker.io/library/rabbitmq:3.9-alpine"
+
 podman pod create --replace --name $POD_NAME \
     -p 8081-8084:8081-8084 \
     -p 5050:5050 \
     -p 27017:27017 \
     -p 1025:1025 \
     -p 8025:8025 \
+    -p 5672:5672 \
     -p 5432:5432
 
 podman create --name ${POD_NAME}-broker-service \
@@ -54,6 +57,11 @@ podman create --name ${POD_NAME}-authentication-service \
 podman create --name ${POD_NAME}-mailhog \
     --pod $POD_NAME \
     $MAILHOG_IMAGE
+
+podman create --name ${POD_NAME}-rabbitmq \
+    --pod $POD_NAME \
+    -v ./db-data/rabbitmq/:/var/lib/rabbitmq:Z \
+    $RABBITMQ_IMAGE
 
 podman create --name ${POD_NAME}-postgres \
     --pod $POD_NAME \
