@@ -34,6 +34,11 @@ podman create --name ${POD_NAME}-logger-service \
     --restart always \
     microservices/logger-service
 
+podman create --name ${POD_NAME}-listener-service \
+    --pod $POD_NAME \
+    --restart always \
+    microservices/listener-service
+
 podman create --name ${POD_NAME}-mailer-service \
     --pod $POD_NAME \
     --restart always \

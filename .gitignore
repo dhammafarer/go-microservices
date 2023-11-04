@@ -6,3 +6,4 @@ tags
 **/loggerApp
 **/mailerApp
 project/db-data
+listener-service/listenerApp
