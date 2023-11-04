@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/rpc"
 )
 
 type RequestPayload struct {
@@ -54,7 +55,7 @@ func (app *Config) HandleSubmission(w http.ResponseWriter, r *http.Request) {
 	case "auth":
 		app.authenticate(w, payload.Auth)
 	case "log":
-		app.logEventViaRabbit(w, payload.Log)
+		app.logItemViaRPC(w, payload.Log)
 	case "mail":
 		app.sendMail(w, payload.Mail)
 	default:
@@ -151,19 +152,19 @@ func (app *Config) logItem(w http.ResponseWriter, entry LogPayload) {
 }
 
 func (app *Config) sendMail(w http.ResponseWriter, msg MailPayload) {
-    jsonData, _ := json.MarshalIndent(msg, "", "\t")
+	jsonData, _ := json.MarshalIndent(msg, "", "\t")
 
-    // call the mail service
-    mailServiceURL := "http://localhost:8084/send"
+	// call the mail service
+	mailServiceURL := "http://localhost:8084/send"
 
-    // post to mail service
-    request, err := http.NewRequest("POST", mailServiceURL, bytes.NewBuffer(jsonData))
-    if err != nil {
-        app.errorJSON(w, err)
-        return
-    }
+	// post to mail service
+	request, err := http.NewRequest("POST", mailServiceURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
 
-    request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Content-Type", "application/json")
 	client := &http.Client{}
 
 	response, err := client.Do(request)
@@ -174,7 +175,7 @@ func (app *Config) sendMail(w http.ResponseWriter, msg MailPayload) {
 
 	defer response.Body.Close()
 
-    // make sure status code is "accepted"
+	// make sure status code is "accepted"
 	if response.StatusCode != http.StatusAccepted {
 		app.errorJSON(w, err)
 		return
@@ -188,35 +189,67 @@ func (app *Config) sendMail(w http.ResponseWriter, msg MailPayload) {
 }
 
 func (app *Config) logEventViaRabbit(w http.ResponseWriter, l LogPayload) {
-    err := app.pushToQueue(l.Name, l.Data)
-    if err != nil {
-        app.errorJSON(w, err)
-        return
-    }
+	err := app.pushToQueue(l.Name, l.Data)
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
 
-    var payload jsonResponse
-    payload.Error = false
-    payload.Message = "logged via RabbitMQ"
+	var payload jsonResponse
+	payload.Error = false
+	payload.Message = "logged via RabbitMQ"
 
-    app.writeJSON(w, http.StatusAccepted, payload)
+	app.writeJSON(w, http.StatusAccepted, payload)
 }
 
 func (app *Config) pushToQueue(name, msg string) error {
-    emitter, err := event.NewEventEmitter(app.Rabbit)
-    if err != nil {
-        return err
+	emitter, err := event.NewEventEmitter(app.Rabbit)
+	if err != nil {
+		return err
+	}
+
+	payload := LogPayload{
+		Name: name,
+		Data: msg,
+	}
+
+	j, _ := json.MarshalIndent(&payload, "", "\t")
+	err = emitter.Push(string(j), "log.INFO")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type RPCPayload struct {
+	Name string
+	Data string
+}
+
+func (app *Config) logItemViaRPC(w http.ResponseWriter, l LogPayload) {
+	client, err := rpc.Dial("tcp", "localhost:5001")
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	rpcPayload := RPCPayload{
+        Name: l.Name,
+        Data: l.Data,
     }
 
-    payload := LogPayload{
-        Name: name,
-        Data: msg,
+    var result string
+    err = client.Call("RPCServer.LogInfo", rpcPayload, &result)
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+    payload := jsonResponse{
+        Error: false,
+        Message: result,
     }
 
-    j, _ := json.MarshalIndent(&payload, "", "\t")
-    err = emitter.Push(string(j), "log.INFO") 
-    if err != nil {
-        return err
-    }
-
-    return nil
-} 
+    app.writeJSON(w, http.StatusAccepted, payload)
+}
