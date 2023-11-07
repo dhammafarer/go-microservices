@@ -11,7 +11,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-const webPort = "8081"
+const webPort = "80"
 
 type Config struct {
     Rabbit *amqp.Connection
@@ -51,7 +51,7 @@ func connect() (*amqp.Connection, error) {
 
 	// don't continue until rabbit is ready
 	for {
-		c, err := amqp.Dial("amqp://guest:guest@localhost:5672")
+		c, err := amqp.Dial("amqp://guest:guest@rabbitmq")
 		if err != nil {
 			fmt.Println("RabbitMQ not yet ready")
 			counts++

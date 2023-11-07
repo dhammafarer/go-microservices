@@ -111,7 +111,7 @@ func handlePayload(payload Payload) {
 func logEvent(entry Payload) error {
 	jsonData, _ := json.MarshalIndent(entry, "", "\t")
 
-	logServiceURL := "http://localhost:8083/log"
+	logServiceURL := "http://logger-service/log"
 
 	request, err := http.NewRequest(
         "POST", logServiceURL, bytes.NewBuffer(jsonData),

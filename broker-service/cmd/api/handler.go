@@ -75,7 +75,7 @@ func (app *Config) authenticate(w http.ResponseWriter, a AuthPayload) {
 
 	// call the service
 	request, err := http.NewRequest(
-		"POST", "http://localhost:8082/authenticate", bytes.NewBuffer(jsonData),
+		"POST", "http://authentication-service/authenticate", bytes.NewBuffer(jsonData),
 	)
 	if err != nil {
 		app.errorJSON(w, err)
@@ -125,7 +125,7 @@ func (app *Config) authenticate(w http.ResponseWriter, a AuthPayload) {
 func (app *Config) logItem(w http.ResponseWriter, entry LogPayload) {
 	jsonData, _ := json.MarshalIndent(entry, "", "\t")
 
-	logServiceURL := "http://localhost:8083/log"
+	logServiceURL := "http://logger-service/log"
 
 	request, err := http.NewRequest("POST", logServiceURL, bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -161,7 +161,7 @@ func (app *Config) sendMail(w http.ResponseWriter, msg MailPayload) {
 	jsonData, _ := json.MarshalIndent(msg, "", "\t")
 
 	// call the mail service
-	mailServiceURL := "http://localhost:8084/send"
+	mailServiceURL := "http://mailer-service/send"
 
 	// post to mail service
 	request, err := http.NewRequest("POST", mailServiceURL, bytes.NewBuffer(jsonData))
@@ -234,70 +234,70 @@ type RPCPayload struct {
 }
 
 func (app *Config) logItemViaRPC(w http.ResponseWriter, l LogPayload) {
-	client, err := rpc.Dial("tcp", "localhost:5001")
+	client, err := rpc.Dial("tcp", "logger-service:5001")
 	if err != nil {
 		app.errorJSON(w, err)
 		return
 	}
 
 	rpcPayload := RPCPayload{
-        Name: l.Name,
-        Data: l.Data,
-    }
+		Name: l.Name,
+		Data: l.Data,
+	}
 
-    var result string
-    err = client.Call("RPCServer.LogInfo", rpcPayload, &result)
+	var result string
+	err = client.Call("RPCServer.LogInfo", rpcPayload, &result)
 	if err != nil {
 		app.errorJSON(w, err)
 		return
 	}
 
-    payload := jsonResponse{
-        Error: false,
-        Message: result,
-    }
+	payload := jsonResponse{
+		Error:   false,
+		Message: result,
+	}
 
-    app.writeJSON(w, http.StatusAccepted, payload)
+	app.writeJSON(w, http.StatusAccepted, payload)
 }
 
 func (app *Config) LogViaGRPC(w http.ResponseWriter, r *http.Request) {
-    var requestPayload RequestPayload
+	var requestPayload RequestPayload
 
-    err := app.readJSON(w, r, &requestPayload)
-    if err != nil {
-        app.errorJSON(w, err)
-        return
-    }
+	err := app.readJSON(w, r, &requestPayload)
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
 
-    conn, err := grpc.Dial(
-        "localhost:50001",
-        grpc.WithTransportCredentials(insecure.NewCredentials()),
-        grpc.WithBlock(),
-    )
-    if err != nil {
-        app.errorJSON(w, err)
-        return
-    }
-    defer conn.Close()
+	conn, err := grpc.Dial(
+		"logger-service:50001",
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithBlock(),
+	)
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+	defer conn.Close()
 
-    c := logs.NewLogServiceClient(conn)
-    ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-    defer cancel()
+	c := logs.NewLogServiceClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
 
-    _,err = c.WriteLog(ctx, &logs.LogRequest{
-        LogEntry: &logs.Log{
-            Name: requestPayload.Log.Name,
-            Data: requestPayload.Log.Data,
-        },
-    })
-    if err != nil {
-        app.errorJSON(w, err)
-        return
-    }
+	_, err = c.WriteLog(ctx, &logs.LogRequest{
+		LogEntry: &logs.Log{
+			Name: requestPayload.Log.Name,
+			Data: requestPayload.Log.Data,
+		},
+	})
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
 
-    var payload jsonResponse
-    payload.Error = false
-    payload.Message = "logged"
+	var payload jsonResponse
+	payload.Error = false
+	payload.Message = "logged"
 
-    app.writeJSON(w, http.StatusAccepted, payload)
+	app.writeJSON(w, http.StatusAccepted, payload)
 }

@@ -7,35 +7,21 @@ LISTENER_BINARY=listenerApp
 
 POD_NAME=microservices
 
-## up: starts all containers in the background without forcing build
 up:
-	@echo "Starting pod..."
-	sh ./pod.sh
-	podman pod start ${POD_NAME}
-	@echo "Pod started!"
+	@echo "Starting Docker images..."
+	podman-compose up -d
+	@echo "Docker images started!"
 
-## up_build: stops pod (if running), builds all projects and starts pod again
 up_build: build_broker build_auth build_logger build_mailer build_listener
-	@echo "Stopping pod (if running...)"
-	podman pod stop -i ${POD_NAME}
-	@echo "Removing pod"
-	podman pod rm -i ${POD_NAME}
-	@echo "Building (when required)..."
-	cd ../broker-service && podman build . -t microservices/broker-service
-	cd ../authentication-service && podman build . -t microservices/authentication-service
-	cd ../logger-service && podman build . -t microservices/logger-service
-	cd ../mail-service && podman build . -t microservices/mailer-service
-	cd ../listener-service && podman build . -t microservices/listener-service
-	@echo "Starting pod..."
-	sh ./pod.sh
-	podman pod start ${POD_NAME}
-	@echo "Pod images built and started!"
+	@echo "Stopping docker images (if running...)"
+	podman-compose down
+	@echo "Building (when required) and starting docker images..."
+	podman-compose up --build -d
+	@echo "Docker images built and started!"
 
-## down: stop pod
 down:
-	@echo "Stopping pod..."
-	podman pod stop -i ${POD_NAME}
-	podman pod rm -i ${POD_NAME}
+	@echo "Stopping docker compose..."
+	podman-compose down
 	@echo "Done!"
 
 build_broker:
