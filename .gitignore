@@ -5,5 +5,6 @@ tags
 **/authApp
 **/loggerApp
 **/mailerApp
+**/frontendApp
+**/listenerApp
 project/db-data
-listener-service/listenerApp
