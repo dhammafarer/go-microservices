@@ -4,6 +4,7 @@ AUTH_BINARY=authApp
 LOGGER_BINARY=loggerApp
 MAILER_BINARY=mailerApp
 LISTENER_BINARY=listenerApp
+FRONT_BINARY=frontendApp
 
 POD_NAME=microservices
 
@@ -12,7 +13,7 @@ up:
 	podman-compose up -d
 	@echo "Docker images started!"
 
-up_build: build_broker build_auth build_logger build_mailer build_listener
+up_build: build_broker build_auth build_logger build_mailer build_listener build_front
 	@echo "Stopping docker images (if running...)"
 	podman-compose down
 	@echo "Building (when required) and starting docker images..."
@@ -50,6 +51,11 @@ build_logger:
 	@echo "Done!"
 
 build_front:
+	@echo "Building front end binary..."
+	cd ../front-end && env CGO_ENABLED=0 go build -o ${FRONT_BINARY} ./cmd/web
+	@echo "Done!"
+
+build_frontend:
 	@echo "Building front end binary..."
 	cd ../front-end && env CGO_ENABLED=0 go build -o ${FRONT_END_BINARY} ./cmd/web
 	@echo "Done!"
